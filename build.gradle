@@ -20,38 +20,14 @@ repositories {
 
 println "MP: [file:build.gradle] configuration phase."
 
-tasks.register("mpZipFiles", Zip) {
-    from project.findProperty("tasks.files.folder")
-    include "*"
-    group = "MP Group"
-    archiveFileName = "MP_TEST.zip"
-    destinationDirectory = file("build/mp/")
-    description = "MP zip files from dir" +
-        " configured in gradle.properties file" +
-        " to\n\tdir:  " + destinationDirectory +
-        "\n\tfile: " + archiveFileName
-    println "MP: [file:build.gradle] task registration mpZipFiles."
-}
-
-tasks.register('upper') {
-    group = "MP Group"
-    doLast {
-        String someString = 'mY_nAmE'
-        println "Original: $someString"
-        println "Upper case: ${someString.toUpperCase()}"
-        println "Property: " + project.findProperty("tasks.files.folder")
-    }
-    println "MP: [file:build.gradle] task registration upper."
-}
-
 tasks.register('sortFiles') {
-    group = "MP Group"
+    group = "Files"
     String root = project.rootDir
     String srcDir = project.findProperty("tasks.files.folder")
     String dstDir = "build/files"
     String str = project.findProperty("tasks.files.sortType")
     boolean isSortByExtension = "extension".equals(str);
-    description = "MP sort files" +
+    description = "Sorts files" +
         "\n\tfrom dir: " + root + "/" + srcDir +
         "\n\t  to dir: " + root + "/" + dstDir +
         "\n\t sort by: " + (isSortByExtension ? "extension" : "creation date")
