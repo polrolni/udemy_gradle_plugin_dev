@@ -1,0 +1,94 @@
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.BasicFileAttributes
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.function.Function
+import java.util.stream.Collectors
+
+
+plugins {
+    id "java"
+}
+
+repositories {
+    mavenCentral()
+}
+
+println "MP: [file:build.gradle] configuration phase."
+
+tasks.register("mpZipFiles", Zip) {
+    from project.findProperty("tasks.files.folder")
+    include "*"
+    group = "MP Group"
+    archiveFileName = "MP_TEST.zip"
+    destinationDirectory = file("build/mp/")
+    description = "MP zip files from dir" +
+        " configured in gradle.properties file" +
+        " to\n\tdir:  " + destinationDirectory +
+        "\n\tfile: " + archiveFileName
+    println "MP: [file:build.gradle] task registration mpZipFiles."
+}
+
+tasks.register('upper') {
+    group = "MP Group"
+    doLast {
+        String someString = 'mY_nAmE'
+        println "Original: $someString"
+        println "Upper case: ${someString.toUpperCase()}"
+        println "Property: " + project.findProperty("tasks.files.folder")
+    }
+    println "MP: [file:build.gradle] task registration upper."
+}
+
+tasks.register('sortFiles') {
+    group = "MP Group"
+    String root = project.rootDir
+    String srcDir = project.findProperty("tasks.files.folder")
+    String dstDir = "build/files"
+    String str = project.findProperty("tasks.files.sortType")
+    boolean isSortByExtension = "extension".equals(str);
+    description = "MP sort files" +
+        "\n\tfrom dir: " + root + "/" + srcDir +
+        "\n\t  to dir: " + root + "/" + dstDir +
+        "\n\t sort by: " + (isSortByExtension ? "extension" : "creation date")
+
+    doLast {
+        List<Path> files = Files.list(Path.of(root, srcDir)).collect(Collectors.toList())
+        println "Files found: " + files.size()
+        Function<Path, String> classifier = p -> {
+            if (isSortByExtension) {
+                str = p.toString()
+                return str.substring(str.lastIndexOf(".") + 1)
+            } else {
+                try {
+                    BasicFileAttributes attr = Files.readAttributes(p, BasicFileAttributes.class)
+                    Instant i = attr.creationTime().toInstant()
+                    DateTimeFormatter formatter = DateTimeFormatter
+                        .ofPattern("MM_yyyy")
+                        .withZone(ZoneId.systemDefault())
+                    return formatter.format(i)
+                } catch (IOException ex) {
+                    return "unknown"
+                }
+            }
+        }
+        Map<String, List<Path>> groups = files.stream().collect(Collectors.groupingBy(classifier) )
+        println "Groups: " + groups.keySet()
+
+        groups.forEach { String s, List<Path> l ->
+            l.forEach {
+                p -> try {
+                    Path dst = Paths.get(root, dstDir, s)
+                    // deprecated project.mkdir(dst)
+                    Files.createDirectories(dst)
+                    Files.copy(p, dst.resolve(p.getFileName()), StandardCopyOption.REPLACE_EXISTING)
+                } catch (Exception e) {}
+            }
+        }
+    }
+    println "MP: [file:build.gradle] task registration sortFiles."
+}

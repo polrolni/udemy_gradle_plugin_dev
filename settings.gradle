@@ -1,0 +1,2 @@
+rootProject.name = 'file-tasks-assignment'
+println "MP: [file:settings.gradle] initialization phase."
